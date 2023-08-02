@@ -7,6 +7,8 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 system = system()
@@ -19,7 +21,7 @@ logging.basicConfig(
 class WebDriver:
     def __init__(self):
         self._driver: webdriver.Chrome
-        self._implicit_wait_time = 20
+        self._implicit_wait_time = 40
 
     def __enter__(self) -> webdriver.Chrome:
         logging.info("Open browser")
@@ -38,15 +40,16 @@ class WebDriver:
 
 class BerlinBot:
     def __init__(self):
-        self.wait_time = 20
+        self.wait_time = 40
         self._sound_file = os.path.join(os.getcwd(), "alarm.wav")
         self._error_message = """Für die gewählte Dienstleistung sind aktuell keine Termine frei! Bitte"""
 
     @staticmethod
     def enter_start_page(driver: webdriver.Chrome):
         logging.info("Visit start page")
-        driver.get("https://otv.verwalt-berlin.de/ams/TerminBuchen")
-        driver.find_element(By.XPATH, '//*[@id="mainForm"]/div/div/div/div/div/div/div/div/div/div[1]/div[1]/div[2]/a').click()
+        driver.get("https://otv.verwalt-berlin.de/ams/TerminBuchen/wizardng?sprachauswahl=de")
+        #driver.find_element(By.XPATH, '//*[@id="mainForm"]/div/div/div/div/div/div/div/div/div/div[1]/div[1]/div[2]/a').get_attribute('value')
+        driver.find_element(By.XPATH, '//*[@id="xi-txt-1"]/h1/span').get_attribute('value')
         time.sleep(5)
 
     @staticmethod
@@ -55,6 +58,8 @@ class BerlinBot:
         driver.find_element(By.XPATH, '//*[@id="xi-div-1"]/div[4]/label[2]/p').click()
         time.sleep(1)
         driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
+        #WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-400'))
+        WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-400')))
         time.sleep(5)
 
     @staticmethod
@@ -62,25 +67,37 @@ class BerlinBot:
         logging.info("Fill out form")
         # select china
         s = Select(driver.find_element(By.ID, 'xi-sel-400'))
-        s.select_by_visible_text("China")
+        s.select_by_visible_text("Bangladesch")
+        logging.info("selected Country")
+        time.sleep(2)
+
+        WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-422')))
         # eine person
         s = Select(driver.find_element(By.ID, 'xi-sel-422'))
         s.select_by_visible_text("eine Person")
+        logging.info("selected person")   
+        time.sleep(3)
+        WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-427')))
         # no family
-        s = Select(driver.find_element(By.ID, 'xi-sel-427' ))
+        s = Select(driver.find_element(By.ID, 'xi-sel-427'))
         s.select_by_visible_text("nein")
-        time.sleep(5)
+        logging.info("selected family")
+        time.sleep(4)
+        WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#xi-div-30 > div.ozg-kachel.kachel-460-0-2.level1 > label > p')))
 
         # extend stay
-        driver.find_element(By.XPATH, '//*[@id="xi-div-30"]/div[2]/label/p').click()
-        time.sleep(2)
+        driver.find_element(By.CSS_SELECTOR, '#xi-div-30 > div.ozg-kachel.kachel-460-0-2.level1 > label > p').click()
+        
+        #WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p > font > font')))
+
+        #WebDriverWait(driver, 30).until(EC.text_to_be_present_in_element(By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p > font > font'),"Studium und Ausbildung")
 
         # click on study group
-        driver.find_element(By.XPATH, '//*[@id="inner-479-0-2"]/div/div[1]/label/p').click()
+        driver.find_element(By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p').click()
         time.sleep(2)
 
         # b/c of stufy
-        driver.find_element(By.XPATH, '//*[@id="inner-479-0-2"]/div/div[2]/div/div[5]/label').click()
+        driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[4]/div[2]/form/div[2]/div/div[2]/div[8]/div[2]/div[2]/div[1]/fieldset/div[8]/div[1]/div[1]/div[1]/div[9]/div/div[2]/div/div[5]/label').click()
         time.sleep(4)
 
         # submit form
@@ -98,18 +115,22 @@ class BerlinBot:
 
     def run_once(self):
         with WebDriver() as driver:
-            self.enter_start_page(driver)
-            self.tick_off_some_bullshit(driver)
-            self.enter_form(driver)
+            try:
 
-            # retry submit
-            for _ in range(10):
-                if not self._error_message in driver.page_source:
-                    self._success()
-                logging.info("Retry submitting form")
-                driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
-                time.sleep(self.wait_time)
+                self.enter_start_page(driver)
+                self.tick_off_some_bullshit(driver)
+                self.enter_form(driver)
 
+                # retry submit
+                while True:
+                    if not self._error_message in driver.page_source:
+                        self._success()
+                    logging.info("Retry submitting form")
+                    driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
+                    time.sleep(self.wait_time)
+            except Exception as e:
+                    print(str(e))
+                    print("Loading took too much time!")
     def run_loop(self):
         # play sound to check if it works
         self._play_sound_osx(self._sound_file)
