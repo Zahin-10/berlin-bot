@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from your_info import *
 
 system = system()
 
@@ -67,7 +67,7 @@ class BerlinBot:
         logging.info("Fill out form")
         # select china
         s = Select(driver.find_element(By.ID, 'xi-sel-400'))
-        s.select_by_visible_text("Bangladesch")
+        s.select_by_visible_text(country)
         logging.info("selected Country")
         time.sleep(2)
 
