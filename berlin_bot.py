@@ -44,6 +44,7 @@ class BerlinBot:
         self.wait_time = 40
         self._sound_file = os.path.join(os.getcwd(), "alarm.wav")
         self._error_message = """Für die gewählte Dienstleistung sind aktuell keine Termine frei! Bitte"""
+        self._error_message2 = """Sitzungsende"""
 
     @staticmethod
     def enter_start_page(driver: webdriver.Chrome):
@@ -148,6 +149,11 @@ class BerlinBot:
 
                 # retry submit
                 while True:
+                    if self._error_message2 in driver.page_source:
+                        self._play_sound_osx(self._sound_file)
+                        self.enter_start_page(driver)
+                        self.tick_off_some_bullshit(driver)
+                        self.enter_form(driver)
                     if not self._error_message in driver.page_source:
                         self._success()
                     logging.info("Retry submitting form")
