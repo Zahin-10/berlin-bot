@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 import undetected_chromedriver as uc
+import wait_until_attrbitute as custom_condition
 
 from your_info import *
 
@@ -156,7 +157,12 @@ class BerlinBot:
                         self._success()
                     logging.info("Retry submitting form")
                     driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
-                    time.sleep(self.wait_time)
+                    element_present = EC.visibility_of_element_located((By.CSS_SELECTOR, "div.loading"))
+                    WebDriverWait(driver, 15).until(element_present)
+                    element_present = EC.invisibility_of_element((By.CSS_SELECTOR, "div.loading"))
+                    WebDriverWait(driver, 15).until(element_present)
+                    element_present = EC.visibility_of_element_located((By.ID, 'applicationForm:managedForm:proceed'))
+                    WebDriverWait(driver, 15).until(element_present)
             except Exception as e:
                     logging.info(driver.get_log('driver'))
                     logging.info(driver.get_log('browser'))
