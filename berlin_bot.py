@@ -8,9 +8,11 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 import undetected_chromedriver as uc
 
+from your_info import *
 
 system = system()
 
@@ -40,6 +42,7 @@ class BerlinBot:
         self.wait_time = 5
         self._sound_file = os.path.join(os.getcwd(), "alarm.wav")
         self._error_message = """Für die gewählte Dienstleistung sind aktuell keine Termine frei! Bitte"""
+        self._error_message2 = """Sitzungsende"""
 
     @staticmethod
     def enter_start_page(driver: uc.Chrome):
@@ -64,7 +67,7 @@ class BerlinBot:
         logging.info("Fill out form")
         # select china
         s = Select(driver.find_element(By.ID, 'xi-sel-400'))
-        s.select_by_visible_text("Bangladesch")
+        s.select_by_visible_text(country)
         logging.info("selected Country")
         time.sleep(2)
 
@@ -79,28 +82,52 @@ class BerlinBot:
         s = Select(driver.find_element(By.ID, 'xi-sel-427'))
         s.select_by_visible_text("nein")
         logging.info("selected family")
-        time.sleep(4)
-        WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#xi-div-30 > div.ozg-kachel.kachel-460-0-2.level1 > label > p')))
+        time.sleep(3)
 
         # extend stay
-        driver.find_element(By.CSS_SELECTOR, '#xi-div-30 > div.ozg-kachel.kachel-460-0-2.level1 > label > p').click()
-        
-        #WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p > font > font')))
+        # wait until element is present
+        e1= WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, residence_option))
+        )
+        e1.click()
 
-        #WebDriverWait(driver, 30).until(EC.text_to_be_present_in_element(By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p > font > font'),"Studium und Ausbildung")
+        time.sleep(3)
 
         # click on study group
-        driver.find_element(By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p').click()
-        time.sleep(2)
+        #driver.find_element(By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p').click()
+        if residence_option == "//p[contains(.,'Aufenthaltstitel - verlängern')]" or residence_option == "//p[contains(.,'Aufenthaltstitel - beantragen')]":
+            e1 = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, group_option))
+            )
+            e1.click()
+        time.sleep(3)
 
         # b/c of stufy
-        driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[4]/div[2]/form/div[2]/div/div[2]/div[8]/div[2]/div[2]/div[1]/fieldset/div[8]/div[1]/div[1]/div[1]/div[9]/div/div[2]/div/div[5]/label').click()
-        time.sleep(4)
+        e1 = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, reason_option))
+        )
+        e1.click()
+        #driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[4]/div[2]/form/div[2]/div/div[2]/div[8]/div[2]/div[2]/div[1]/fieldset/div[8]/div[1]/div[1]/div[1]/div[9]/div/div[2]/div/div[5]/label').click()
+        time.sleep(3)
+
+        if residence_option == "//p[contains(.,'Duldung - verlängern')]" or residence_option == "//p[contains(.,' Aufenthaltsgestattung (Asyl) - verlängern')]":
+            input_box = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.NAME, 'nnachnamezmsVal'))
+            )
+            input_box.send_keys(last_name)
+            actions = ActionChains(driver)
+
+            # Move the mouse 50 pixels down from the input box and click
+            actions.move_to_element_with_offset(input_box, 0, 50).click().perform()
+            time.sleep(4)
+
+
 
         # submit form
         driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
         time.sleep(10)
-    
+
+
     def _success(self):
         logging.info("!!!SUCCESS - do not close the window!!!!")
         while True:
@@ -120,6 +147,11 @@ class BerlinBot:
 
                 # retry submit
                 while True:
+                    if self._error_message2 in driver.page_source:
+                        self._play_sound_osx(self._sound_file)
+                        self.enter_start_page(driver)
+                        self.tick_off_some_bullshit(driver)
+                        self.enter_form(driver)
                     if not self._error_message in driver.page_source:
                         self._success()
                     logging.info("Retry submitting form")
