@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import undetected_chromedriver as uc
 
 
 system = system()
@@ -20,18 +21,14 @@ logging.basicConfig(
 
 class WebDriver:
     def __init__(self):
-        self._driver: webdriver.Chrome
-        self._implicit_wait_time = 40
+        self._driver: uc.Chrome
+        self._implicit_wait_time = 600
 
     def __enter__(self) -> webdriver.Chrome:
         logging.info("Open browser")
         # some stuff that prevents us from being locked out
-        options = webdriver.ChromeOptions() 
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        self._driver = webdriver.Chrome(options=options)
+        self._driver = uc.Chrome(headless=False,use_subprocess=False)
         self._driver.implicitly_wait(self._implicit_wait_time) # seconds
-        self._driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        self._driver.execute_cdp_cmd('Network.setUserAgentOverride', {"userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36'})
         return self._driver
 
     def __exit__(self, exc_type, exc_value, exc_tb):
@@ -40,12 +37,12 @@ class WebDriver:
 
 class BerlinBot:
     def __init__(self):
-        self.wait_time = 40
+        self.wait_time = 5
         self._sound_file = os.path.join(os.getcwd(), "alarm.wav")
         self._error_message = """Für die gewählte Dienstleistung sind aktuell keine Termine frei! Bitte"""
 
     @staticmethod
-    def enter_start_page(driver: webdriver.Chrome):
+    def enter_start_page(driver: uc.Chrome):
         logging.info("Visit start page")
         driver.get("https://otv.verwalt-berlin.de/ams/TerminBuchen/wizardng?sprachauswahl=de")
         #driver.find_element(By.XPATH, '//*[@id="mainForm"]/div/div/div/div/div/div/div/div/div/div[1]/div[1]/div[2]/a').get_attribute('value')
@@ -53,7 +50,7 @@ class BerlinBot:
         time.sleep(5)
 
     @staticmethod
-    def tick_off_some_bullshit(driver: webdriver.Chrome):
+    def tick_off_some_bullshit(driver: uc.Chrome):
         logging.info("Ticking off agreement")
         driver.find_element(By.XPATH, '//*[@id="xi-div-1"]/div[4]/label[2]/p').click()
         time.sleep(1)
@@ -63,7 +60,7 @@ class BerlinBot:
         time.sleep(5)
 
     @staticmethod
-    def enter_form(driver: webdriver.Chrome):
+    def enter_form(driver: uc.Chrome):
         logging.info("Fill out form")
         # select china
         s = Select(driver.find_element(By.ID, 'xi-sel-400'))
@@ -129,7 +126,8 @@ class BerlinBot:
                     driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
                     time.sleep(self.wait_time)
             except Exception as e:
-                    print(str(e))
+                    logging.info(driver.get_log('driver'))
+                    logging.info(driver.get_log('browser'))
                     print("Loading took too much time!")
     def run_loop(self):
         # play sound to check if it works
