@@ -13,6 +13,10 @@ from selenium.webdriver.support import expected_conditions as EC
 import undetected_chromedriver as uc
 import wait_until_attrbitute as custom_condition
 
+import random
+import time
+random.seed(time.time())
+
 from your_info import *
 
 system = system()
@@ -51,17 +55,17 @@ class BerlinBot:
         driver.get("https://otv.verwalt-berlin.de/ams/TerminBuchen/wizardng?sprachauswahl=de")
         #driver.find_element(By.XPATH, '//*[@id="mainForm"]/div/div/div/div/div/div/div/div/div/div[1]/div[1]/div[2]/a').get_attribute('value')
         driver.find_element(By.XPATH, '//*[@id="xi-txt-1"]/h1/span').get_attribute('value')
-        time.sleep(5)
+        time.sleep(random.randint(5, 6))
 
     @staticmethod
     def tick_off_some_bullshit(driver: uc.Chrome):
         logging.info("Ticking off agreement")
         driver.find_element(By.XPATH, '//*[@id="xi-div-1"]/div[4]/label[2]/p').click()
-        time.sleep(1)
+        time.sleep(random.randint(1, 2))
         driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
         #WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-400'))
         WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-400')))
-        time.sleep(5)
+        time.sleep(random.randint(5, 6))
 
     @staticmethod
     def enter_form(driver: uc.Chrome):
@@ -70,20 +74,20 @@ class BerlinBot:
         s = Select(driver.find_element(By.ID, 'xi-sel-400'))
         s.select_by_visible_text(country)
         logging.info("selected Country")
-        time.sleep(2)
+        time.sleep(random.randint(1, 3))
 
         WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-422')))
         # eine person
         s = Select(driver.find_element(By.ID, 'xi-sel-422'))
         s.select_by_visible_text("eine Person")
         logging.info("selected person")   
-        time.sleep(3)
+        time.sleep(random.randint(1, 3))
         WebDriverWait(driver, 40).until(EC.presence_of_element_located((By.ID, 'xi-sel-427')))
         # no family
         s = Select(driver.find_element(By.ID, 'xi-sel-427'))
         s.select_by_visible_text("nein")
         logging.info("selected family")
-        time.sleep(3)
+        time.sleep(random.randint(1, 3))
 
         # extend stay
         # wait until element is present
@@ -92,7 +96,7 @@ class BerlinBot:
         )
         e1.click()
 
-        time.sleep(3)
+        time.sleep(random.randint(3, 4))
 
         # click on study group
         #driver.find_element(By.CSS_SELECTOR, '#inner-460-0-2 > div > div.ozg-accordion.accordion-460-0-2-3.level2 > label > p').click()
@@ -101,7 +105,7 @@ class BerlinBot:
                 EC.presence_of_element_located((By.XPATH, group_option))
             )
             e1.click()
-        time.sleep(3)
+        time.sleep(random.randint(3, 4))
 
         # b/c of stufy
         e1 = WebDriverWait(driver, 10).until(
@@ -109,7 +113,7 @@ class BerlinBot:
         )
         e1.click()
         #driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[4]/div[2]/form/div[2]/div/div[2]/div[8]/div[2]/div[2]/div[1]/fieldset/div[8]/div[1]/div[1]/div[1]/div[9]/div/div[2]/div/div[5]/label').click()
-        time.sleep(3)
+        time.sleep(random.randint(3, 4))
 
         if residence_option == "//p[contains(.,'Duldung - verlängern')]" or residence_option == "//p[contains(.,' Aufenthaltsgestattung (Asyl) - verlängern')]":
             input_box = WebDriverWait(driver, 10).until(
@@ -120,7 +124,7 @@ class BerlinBot:
 
             # Move the mouse 50 pixels down from the input box and click
             actions.move_to_element_with_offset(input_box, 0, 50).click().perform()
-            time.sleep(4)
+            time.sleep(random.randint(4, 5))
 
 
 
@@ -156,6 +160,7 @@ class BerlinBot:
                     if not self._error_message in driver.page_source:
                         self._success()
                     logging.info("Retry submitting form")
+                    time.sleep(random.randint(1, 2))
                     driver.find_element(By.ID, 'applicationForm:managedForm:proceed').click()
                     element_present = EC.visibility_of_element_located((By.CSS_SELECTOR, "div.loading"))
                     WebDriverWait(driver, 15).until(element_present)
