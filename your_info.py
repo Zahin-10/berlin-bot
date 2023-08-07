@@ -1,5 +1,5 @@
-country = "Bangladesch"
-last_name = "zahin"
+country = "Ägypten"
+last_name = "Shahin"
 
 #residence_option = "//p[contains(.,'Aufenthaltstitel - beantragen')]"
 #group_option = "//p[contains(.,'Studium und Ausbildung')]"
